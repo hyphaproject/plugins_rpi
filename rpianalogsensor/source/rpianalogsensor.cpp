@@ -9,14 +9,10 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <Poco/ClassLibrary.h>
+#include <QtCore/QProcess>
 
 #include <hypha/utils/logger.h>
-
-#include <Poco/ClassLibrary.h>
-
-#include <QtCore/QJsonDocument>
-#include <QtCore/QJsonObject>
-#include <QtCore/QProcess>
 
 using namespace hypha::utils;
 using namespace hypha::plugin;
@@ -33,6 +29,7 @@ void RpiAnalogSensor::doWork() {
       sendobject.put("analog", analog);
       sendobject.put("value", analog);
       std::stringstream sstream;
+      boost::property_tree::write_json(sstream, sendobject);
       sendMessage(sstream.str());
       std::this_thread::sleep_for(std::chrono::seconds(20));
     } else {
@@ -44,6 +41,7 @@ void RpiAnalogSensor::doWork() {
         sendobject.put("analog", analog);
         sendobject.put("value", analog);
         std::stringstream sstream;
+        boost::property_tree::write_json(sstream, sendobject);
         sendMessage(sstream.str());
         counter = 0;
       }
@@ -64,21 +62,22 @@ std::string RpiAnalogSensor::getStatusMessage() {
 }
 
 void RpiAnalogSensor::loadConfig(std::string json) {
-  QJsonDocument document =
-      QJsonDocument::fromJson(QString::fromStdString(json).toUtf8());
-  QJsonObject object = document.object();
-  if (object.contains("alarm")) {
-    alarm = object.value("alarm").toBool();
-  }
-  if (object.contains("pin")) {
-    PIN = object.value("pin").toInt(0);
-  }
-  if (object.contains("min")) {
-    min = object.value("min").toInt(1);
-  }
-  if (object.contains("max")) {
-    max = object.value("max").toInt(1023);
-  }
+    boost::property_tree::ptree ptjson;
+    std::stringstream ssjson(json);
+    boost::property_tree::read_json(ssjson, ptjson);
+
+    if (ptjson.get_optional<bool>("alarm")) {
+      alarm = ptjson.get<bool>("alarm");
+    }
+    if (ptjson.get_optional<int>("pin")) {
+      PIN = ptjson.get<int>("pin");
+    }
+    if (ptjson.get_optional<int>("min")) {
+      min = ptjson.get<int>("min");
+    }
+    if (ptjson.get_optional<int>("max")) {
+      max = ptjson.get<int>("max");
+    }
 }
 
 std::string RpiAnalogSensor::getConfig() { return "{}"; }
@@ -104,6 +103,5 @@ void RpiAnalogSensor::measure() {
   measure_mutex.unlock();
 }
 
-POCO_BEGIN_MANIFEST(HyphaBasePlugin)
-POCO_EXPORT_CLASS(RpiAnalogSensor)
-POCO_END_MANIFEST
+PLUGIN_API POCO_BEGIN_MANIFEST(HyphaBasePlugin)
+    POCO_EXPORT_CLASS(RpiAnalogSensor) POCO_END_MANIFEST

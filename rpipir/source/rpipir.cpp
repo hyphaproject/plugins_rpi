@@ -2,17 +2,12 @@
 
 #include "hypha/plugins/rpipir/rpipir.h"
 
-#include <hypha/utils/logger.h>
-
 #include <Poco/ClassLibrary.h>
-
-#include <QtCore/QDebug>
-#include <QtCore/QJsonArray>
-#include <QtCore/QJsonDocument>
-#include <QtCore/QJsonObject>
-#include <QtCore/QProcess>
-
 #include <wiringPi.h>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+#include <hypha/utils/logger.h>
 
 using namespace hypha::utils;
 using namespace hypha::plugin;
@@ -42,27 +37,26 @@ void RpiPir::measure() {
 
 void RpiPir::sendMovement() {
   bool movement = getMovement();
+
+  boost::property_tree::ptree sendobject;
+  std::stringstream ssso;
+
+  sendobject.put("id", this->id);
+  sendobject.put("type", name());
+  sendobject.put("movement", movement);
+  sendobject.put("value", movement);
+
   if (movement) {
     if (log) Logger::info("Movement detected: " + this->getId());
 
-    QJsonObject object;
-    object["alarm"] = true;
-    object["id"] = QString::fromStdString(this->id);
-    object["type"] = QString::fromStdString(name());
-    object["movement"] = movement;
-    object["value"] = movement;
-    QJsonDocument document(object);
-    sendMessage(QString(document.toJson()).toStdString());
+    sendobject.put("alarm", true);
+    boost::property_tree::write_json(ssso, sendobject);
+    sendMessage(ssso.str());
     std::this_thread::sleep_for(std::chrono::seconds(2));
   } else {
-    QJsonObject object;
-    object["alarm"] = false;
-    object["id"] = QString::fromStdString(this->id);
-    object["type"] = QString::fromStdString(name());
-    object["movement"] = movement;
-    object["value"] = movement;
-    QJsonDocument document(object);
-    sendMessage(QString(document.toJson()).toStdString());
+    sendobject.put("alarm", false);
+    boost::property_tree::write_json(ssso, sendobject);
+    sendMessage(ssso.str());
   }
 }
 
@@ -74,14 +68,15 @@ bool RpiPir::getMovement() {
 }
 
 void RpiPir::loadConfig(std::string json) {
-  QJsonDocument document =
-      QJsonDocument::fromJson(QString::fromStdString(json).toUtf8());
-  QJsonObject object = document.object();
-  if (object.contains("log")) {
-    log = object.value("log").toBool();
+  boost::property_tree::ptree ptjson;
+  std::stringstream ssjson(json);
+  boost::property_tree::read_json(ssjson, ptjson);
+
+  if (ptjson.get_optional<bool>("log")) {
+    log = ptjson.get<bool>("log");
   }
-  if (object.contains("pin")) {
-    PIN = object.value("pin").toInt(29);
+  if (ptjson.get_optional<int>("pin")) {
+    PIN = ptjson.get<int>("pin");
   }
 }
 
@@ -99,6 +94,5 @@ std::string RpiPir::getStatusMessage() {
   return getMovement() ? "Movement" : "No Movement";
 }
 
-POCO_BEGIN_MANIFEST(HyphaBasePlugin)
-POCO_EXPORT_CLASS(RpiPir)
-POCO_END_MANIFEST
+PLUGIN_API POCO_BEGIN_MANIFEST(HyphaBasePlugin)
+    POCO_EXPORT_CLASS(RpiPir) POCO_END_MANIFEST

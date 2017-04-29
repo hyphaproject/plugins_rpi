@@ -5,8 +5,10 @@
 
 # find_package(THIRDPARTY REQUIRED)
 
-find_package(Qt5Core REQUIRED)
-
+find_package(Qt5Core)
+if(NOT Qt5Core_FOUND)
+    return()
+endif()
 #
 # Library name and options
 #
