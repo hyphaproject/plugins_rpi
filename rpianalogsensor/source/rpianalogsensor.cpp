@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <Poco/ClassLibrary.h>
 #include <QtCore/QProcess>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include <hypha/utils/logger.h>
 
@@ -62,22 +62,22 @@ std::string RpiAnalogSensor::getStatusMessage() {
 }
 
 void RpiAnalogSensor::loadConfig(std::string json) {
-    boost::property_tree::ptree ptjson;
-    std::stringstream ssjson(json);
-    boost::property_tree::read_json(ssjson, ptjson);
+  boost::property_tree::ptree ptjson;
+  std::stringstream ssjson(json);
+  boost::property_tree::read_json(ssjson, ptjson);
 
-    if (ptjson.get_optional<bool>("alarm")) {
-      alarm = ptjson.get<bool>("alarm");
-    }
-    if (ptjson.get_optional<int>("pin")) {
-      PIN = ptjson.get<int>("pin");
-    }
-    if (ptjson.get_optional<int>("min")) {
-      min = ptjson.get<int>("min");
-    }
-    if (ptjson.get_optional<int>("max")) {
-      max = ptjson.get<int>("max");
-    }
+  if (ptjson.get_optional<bool>("alarm")) {
+    alarm = ptjson.get<bool>("alarm");
+  }
+  if (ptjson.get_optional<int>("pin")) {
+    PIN = ptjson.get<int>("pin");
+  }
+  if (ptjson.get_optional<int>("min")) {
+    min = ptjson.get<int>("min");
+  }
+  if (ptjson.get_optional<int>("max")) {
+    max = ptjson.get<int>("max");
+  }
 }
 
 std::string RpiAnalogSensor::getConfig() { return "{}"; }
@@ -94,7 +94,7 @@ void RpiAnalogSensor::measure() {
   QProcess process;
   process.setProcessChannelMode(QProcess::MergedChannels);
   process.start("python", QStringList()
-                              << "../plugins/rpianalogsensor.py"
+                              << "plugins/rpianalogsensor.py"
                               << QString::fromStdString(std::to_string(PIN)));
   process.waitForFinished();
   QString output(process.readAllStandardOutput());

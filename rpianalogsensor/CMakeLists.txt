@@ -43,6 +43,10 @@ set(sources
 ${source_path}/${target}.cpp
 )
 
+set(pyfiles
+    ${source_path}/${target}.py
+)
+
 # Group source files
 set(header_group "Header Files (API)")
 set(source_group "Source Files")
@@ -60,6 +64,7 @@ source_group_by_path(${source_path}  "\\\\.cpp$|\\\\.c$|\\\\.h$|\\\\.hpp$"
 add_library(${target}
     ${sources}
     ${headers}
+    ${pyfiles}
 )
 
 # Create namespaced alias
@@ -185,6 +190,13 @@ target_link_libraries(${target}
     INTERFACE
 )
 
+add_custom_command(TARGET ${target} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${pyfiles}
+    ${CMAKE_BINARY_DIR}/plugins
+    COMMENT "Copying python files for ${target} to '${CMAKE_BINARY_DIR}/plugins'"
+)
+
 
 #
 # Deployment
@@ -216,3 +228,6 @@ install(EXPORT ${target}-export
     DESTINATION ${INSTALL_CMAKE}/${target}
     COMPONENT   dev
 )
+
+# Python files
+install(FILES ${pyfiles} DESTINATION ${INSTALL_DATA}/plugins COMPONENT runtime)

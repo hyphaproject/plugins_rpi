@@ -71,10 +71,12 @@ void RpiLed::setRed(bool on) {
   red = on;
   digitalWrite(RED, red ? HIGH : LOW);
 }
+
 void RpiLed::setYellow(bool on) {
   yellow = on;
   digitalWrite(YELLOW, yellow ? HIGH : LOW);
 }
+
 void RpiLed::setGreen(bool on) {
   green = on;
   digitalWrite(GREEN, green ? HIGH : LOW);
