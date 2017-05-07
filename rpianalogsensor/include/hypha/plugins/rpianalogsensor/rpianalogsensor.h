@@ -20,7 +20,23 @@ class RpiAnalogSensor : public HyphaSensor {
   const std::string getTitle() { return "RpiAnalogSensor"; }
   const std::string getVersion() { return "0.1"; }
   const std::string getDescription() { return "Plugin to read analog sensor"; }
-  const std::string getConfigDescription() { return "{}"; }
+  const std::string getConfigDescription() override {
+    return "{"
+           "\"confdesc\":["
+           "{\"name\":\"alarm\", "
+           "\"type\":\"boolean\",\"value\":\"false\",\"description\":\"Give "
+           "alarm if measured value is under min or over max.\"},"
+           "{\"name\":\"pin\", "
+           "\"type\":\"integer\",\"value\":\"6\",\"description\":\"PIN of "
+           "connected Sensor.\"},"
+           "{\"name\":\"min\", "
+           "\"type\":\"integer\",\"value\":\"1\",\"description\":\"Min value "
+           "to give alarm if measurement is beneath.\"},"
+           "{\"name\":\"max\", "
+           "\"type\":\"integer\",\"value\":\"1023\",\"description\":\"Max "
+           "value to give alarm if measurement is above.\"}"
+           "]}";
+  }
   void loadConfig(std::string json);
   std::string getConfig();
   std::string getStatusMessage();

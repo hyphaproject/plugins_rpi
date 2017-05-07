@@ -8,7 +8,9 @@
 #include <iostream>
 
 #include <Poco/ClassLibrary.h>
-#include <QtCore/QProcess>
+#include <Poco/PipeStream.h>
+#include <Poco/Process.h>
+#include <Poco/StreamCopier.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -91,16 +93,25 @@ HyphaBasePlugin *RpiAnalogSensor::getInstance(std::string id) {
 void RpiAnalogSensor::receiveMessage(std::string UNUSED(message)) {}
 
 void RpiAnalogSensor::measure() {
-  QProcess process;
-  process.setProcessChannelMode(QProcess::MergedChannels);
-  process.start("python", QStringList()
-                              << "plugins/rpianalogsensor.py"
-                              << QString::fromStdString(std::to_string(PIN)));
-  process.waitForFinished();
-  QString output(process.readAllStandardOutput());
-  measure_mutex.lock();
-  this->analog = std::stoi(output.toStdString());
-  measure_mutex.unlock();
+  try {
+    std::string cmd("python");
+    std::vector<std::string> args;
+    args.push_back("plugins/rpianalogsensor.py");
+    args.push_back(std::to_string(PIN));
+
+    Poco::Pipe outPipe;
+    Poco::ProcessHandle ph = Poco::Process::launch(cmd, args, 0, &outPipe, 0);
+    Poco::PipeInputStream istr(outPipe);
+
+    std::string output;
+    Poco::StreamCopier::copyToString(istr, output);
+
+    measure_mutex.lock();
+    this->analog = std::stoi(output);
+    measure_mutex.unlock();
+  } catch (std::exception &e) {
+    hypha::utils::Logger::error(e.what());
+  }
 }
 
 PLUGIN_API POCO_BEGIN_MANIFEST(HyphaBasePlugin)
